@@ -1,17 +1,28 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import type { Route } from "./+types/main";
+import { movieService, type Movie } from "../services/movieService";
+import { SearchBar } from "../components/SearchBar";
+import { MovieCard } from "../components/MovieCard";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Main - React Movie Hooks" },
-    { name: "description", content: "Main page" },
+    { title: "Movie Search - React Movie Hooks" },
+    { name: "description", content: "Search and discover movies" },
   ];
 }
 
 export default function Main() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [userName, setUserName] = useState({ firstName: "", lastName: "" });
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const searchQuery = searchParams.get('q') || '';
 
   useEffect(() => {
     const authToken = localStorage.getItem('authToken');
@@ -37,13 +48,136 @@ export default function Main() {
     }
   }, [navigate]);
 
+  useEffect(() => {
+    loadMovies();
+  }, [searchQuery, currentPage]);
+
+  const loadMovies = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      if (searchQuery) {
+        const results = await movieService.searchMovies(searchQuery);
+        setMovies(results);
+        setTotalPages(1);
+      } else {
+        const response = await movieService.getPopularMovies(currentPage);
+        setMovies(response.movies);
+        setTotalPages(response.totalPages);
+      }
+    } catch (err) {
+      console.error("Error loading movies:", err);
+      setError("Failed to load movies. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSearch = (query: string) => {
+    setCurrentPage(1);
+    if (query) {
+      setSearchParams({ q: query });
+    } else {
+      setSearchParams({});
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+    navigate('/signup');
+  };
+
+  const handleMovieClick = (movieId: string) => {
+    console.log("Movie clicked:", movieId);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
-      <div className="text-center">
-        <h1 className="text-6xl font-bold text-gray-900 mb-4">
-          Welcome, {userName.firstName} {userName.lastName}!
-        </h1>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Movie Search
+              </h1>
+              <p className="text-sm text-gray-600">
+                Welcome, {userName.firstName} {userName.lastName}!
+              </p>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-200"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <div className="flex flex-col items-center mb-8">
+          <SearchBar onSearch={handleSearch} initialValue={searchQuery} />
+          {searchQuery && (
+            <p className="mt-4 text-gray-600">
+              Search results for: <span className="font-semibold">{searchQuery}</span>
+            </p>
+          )}
+        </div>
+
+        {error && (
+          <div className="mb-8 p-4 bg-red-100 text-red-700 rounded-lg">
+            {error}
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-600"></div>
+          </div>
+        ) : movies.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+              {movies.map((movie) => (
+                <MovieCard
+                  key={movie.id}
+                  movie={movie}
+                  onClick={() => handleMovieClick(movie.id)}
+                />
+              ))}
+            </div>
+
+            {!searchQuery && totalPages > 1 && (
+              <div className="mt-8 flex justify-center gap-2">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <span className="px-4 py-2 bg-white border border-gray-300 rounded-lg">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="text-center py-20">
+            <p className="text-gray-600 text-lg">
+              {searchQuery ? 'No movies found. Try a different search.' : 'Start searching for movies!'}
+            </p>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
