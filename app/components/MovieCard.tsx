@@ -31,7 +31,15 @@ export function MovieCard({ movie, onClick }: MovieCardProps) {
         )}
       </div>
       <div className="movie-info p-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
+        <h3 
+          className="text-lg font-semibold text-gray-900 mb-2 h-14 overflow-hidden"
+          style={{
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            lineHeight: '1.75rem'
+          }}
+        >
           {movie.title}
         </h3>
         <p className="text-sm text-gray-600 mb-2">
