@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import type { Route } from "./+types/signup";
+
+const API_URL = "http://localhost:5001/api";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -19,21 +21,16 @@ export default function Signup() {
     confirmPassword: "",
   });
 
-
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    console.log('handleChange', name, value);
-    const updatedFormData = {
+    setFormData({
       ...formData,
       [name]: value,
-    };
-    
-    setFormData(updatedFormData);
-    localStorage.setItem('formData', JSON.stringify(updatedFormData));
-    console.log('Form Data Updated:', updatedFormData);
+    });
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -155,29 +152,55 @@ export default function Signup() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (validateForm()) {
-      console.log("=== FORM SUBMITTED SUCCESSFULLY ===");
-      console.log("Form Data:", formData);
-      console.log("First Name:", formData.firstName);
-      console.log("Last Name:", formData.lastName);
-      console.log("Email:", formData.email);
-      console.log("Password:", formData.password);
-      console.log("Confirm Password:", formData.confirmPassword);
-      console.log("===================================");
+      setIsLoading(true);
       
-      const userCredentials = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        password: formData.password,
-      };
-      localStorage.setItem('userCredentials', JSON.stringify(userCredentials));
-      localStorage.removeItem('formData');
-      alert("Registration successful! Please login with your credentials.");
-      navigate('/login');
+      try {
+        const response = await fetch(`${API_URL}/auth/signup`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            email: formData.email,
+            password: formData.password,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          console.log("=== SIGNUP SUCCESSFUL ===");
+          console.log("User created:", data);
+          alert("Registration successful! Please login with your credentials.");
+          navigate('/login');
+        } else {
+          console.error("Signup failed:", data);
+          if (data.message === "User already exists") {
+            setErrors({ email: "This email is already registered" });
+          } else if (data.errors && Array.isArray(data.errors)) {
+            const newErrors: Record<string, string> = {};
+            data.errors.forEach((err: any) => {
+              if (err.path) {
+                newErrors[err.path] = err.msg;
+              }
+            });
+            setErrors(newErrors);
+          } else {
+            alert(data.message || "Registration failed. Please try again.");
+          }
+        }
+      } catch (error) {
+        console.error("Network error:", error);
+        alert("Network error. Please make sure the backend server is running.");
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -327,9 +350,10 @@ export default function Signup() {
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transform transition duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transform transition duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Create Account
+              {isLoading ? "Creating Account..." : "Create Account"}
             </button>
           </form>
 

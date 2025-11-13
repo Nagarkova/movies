@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import type { Route } from "./+types/login";
 
+const API_URL = "http://localhost:5001/api";
+
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "Login - React Movie Hooks" },
@@ -18,18 +20,14 @@ export default function Login() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    console.log('handleChange', name, value);
-    const updatedFormData = {
+    setFormData({
       ...formData,
       [name]: value,
-    };
-    
-    setFormData(updatedFormData);
-    localStorage.setItem('loginData', JSON.stringify(updatedFormData));
-    console.log('Login Data Updated:', updatedFormData);
+    });
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -88,43 +86,53 @@ export default function Login() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (validateForm()) {
-      console.log("=== LOGIN SUBMITTED ===");
-      console.log("Login Data:", formData);
-      console.log("Email:", formData.email);
-      console.log("Password:", formData.password);
-      
-      const storedCredentials = localStorage.getItem('userCredentials');
-      
-      if (!storedCredentials) {
-        alert("No account found. Please sign up first.");
-        console.log("No user credentials found in localStorage");
-        return;
-      }
+      setIsLoading(true);
       
       try {
-        const credentials = JSON.parse(storedCredentials);
-        console.log("Stored credentials:", credentials);
-        
-        if (credentials.email === formData.email && credentials.password === formData.password) {
+        const response = await fetch(`${API_URL}/auth/login`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
           console.log("=== LOGIN SUCCESSFUL ===");
-          alert(`Welcome back, ${credentials.firstName}!`);
-          localStorage.removeItem('loginData');
+          console.log("User data:", data);
+          
+          localStorage.setItem("authToken", data.token);
+          localStorage.setItem("user", JSON.stringify({
+            _id: data._id,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email,
+          }));
+          
+          alert(`Welcome back, ${data.firstName}!`);
           navigate('/');
         } else {
-          console.log("=== LOGIN FAILED ===");
-          alert("Invalid email or password. Please try again.");
+          console.error("Login failed:", data);
           setErrors({
             email: "Invalid credentials",
             password: "Invalid credentials",
           });
+          alert(data.message || "Invalid email or password. Please try again.");
         }
       } catch (error) {
-        console.error("Error parsing stored credentials:", error);
-        alert("An error occurred. Please try again.");
+        console.error("Network error:", error);
+        alert("Network error. Please make sure the backend server is running.");
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -217,9 +225,10 @@ export default function Login() {
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transform transition duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transform transition duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Sign In
+              {isLoading ? "Signing In..." : "Sign In"}
             </button>
           </form>
 

@@ -14,22 +14,25 @@ export default function Main() {
   const [userName, setUserName] = useState({ firstName: "", lastName: "" });
 
   useEffect(() => {
-    const storedCredentials = localStorage.getItem('userCredentials');
+    const authToken = localStorage.getItem('authToken');
+    const userData = localStorage.getItem('user');
     
-    if (!storedCredentials) {
+    if (!authToken || !userData) {
       navigate('/signup');
       return;
     }
 
     try {
-      const credentials = JSON.parse(storedCredentials);
+      const user = JSON.parse(userData);
       setUserName({
-        firstName: credentials.firstName,
-        lastName: credentials.lastName,
+        firstName: user.firstName,
+        lastName: user.lastName,
       });
-      console.log("User loaded:", credentials);
+      console.log("User loaded:", user);
     } catch (error) {
       console.error("Error loading user data:", error);
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
       navigate('/signup');
     }
   }, [navigate]);
