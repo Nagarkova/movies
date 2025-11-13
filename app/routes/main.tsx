@@ -90,7 +90,7 @@ export default function Main() {
   };
 
   const handleMovieClick = (movieId: string) => {
-    console.log("Movie clicked:", movieId);
+    navigate(`/movie/${movieId}`);
   };
 
   return (
