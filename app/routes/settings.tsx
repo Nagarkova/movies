@@ -1,15 +1,7 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
-import type { Route } from "./+types/settings";
+import { useNavigate } from "@tanstack/react-router";
 
 const API_URL = "http://localhost:5001/api";
-
-export function meta({}: Route.MetaArgs) {
-  return [
-    { title: "Settings - React Movie Hooks" },
-    { name: "description", content: "User settings and profile" },
-  ];
-}
 
 interface UserData {
   _id: string;
@@ -18,17 +10,21 @@ interface UserData {
   email: string;
 }
 
-export default function Settings() {
+export function Settings() {
   const navigate = useNavigate();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    document.title = "Settings - React Movie Hooks";
+  }, []);
 
   useEffect(() => {
     const authToken = localStorage.getItem('authToken');
     const userDataStr = localStorage.getItem('user');
     
     if (!authToken || !userDataStr) {
-      navigate('/signup');
+      navigate({ to: '/signup' });
       return;
     }
 
@@ -39,7 +35,7 @@ export default function Settings() {
       console.error("Error loading user data:", error);
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
-      navigate('/signup');
+      navigate({ to: '/signup' });
     } finally {
       setIsLoading(false);
     }
@@ -48,11 +44,11 @@ export default function Settings() {
   const handleLogout = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
-    navigate('/signup');
+    navigate({ to: '/signup' });
   };
 
   const handleBackToMain = () => {
-    navigate('/');
+    navigate({ to: '/' });
   };
 
   if (isLoading) {

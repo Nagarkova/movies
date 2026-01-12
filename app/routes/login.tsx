@@ -1,18 +1,14 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
-import type { Route } from "./+types/login";
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "@tanstack/react-router";
 
 const API_URL = "http://localhost:5001/api";
 
-export function meta({}: Route.MetaArgs) {
-  return [
-    { title: "Login - React Movie Hooks" },
-    { name: "description", content: "Login to your account" },
-  ];
-}
-
-export default function Login() {
+export function Login() {
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    document.title = "Login - React Movie Hooks";
+  }, []);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -119,7 +115,7 @@ export default function Login() {
           }));
           
           alert(`Welcome back, ${data.firstName}!`);
-          navigate('/');
+          navigate({ to: '/' });
         } else {
           console.error("Login failed:", data);
           setErrors({
@@ -235,12 +231,12 @@ export default function Login() {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Don't have an account?{" "}
-              <a
-                href="/signup"
+              <Link
+                to="/signup"
                 className="text-purple-600 hover:text-purple-700 font-medium"
               >
                 Sign up
-              </a>
+              </Link>
             </p>
           </div>
         </div>

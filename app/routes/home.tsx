@@ -1,13 +1,10 @@
-import type { Route } from "./+types/home";
+import { useEffect } from "react";
 import { Welcome } from "../welcome/welcome";
 
-export function meta({}: Route.MetaArgs) {
-  return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
-  ];
-}
-
-export default function Home() {
+export function Home() {
+  useEffect(() => {
+    document.title = "React Movie Hooks";
+  }, []);
+  
   return <Welcome />;
 }

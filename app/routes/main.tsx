@@ -1,20 +1,16 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router";
-import type { Route } from "./+types/main";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { movieService, type Movie } from "../services/movieService";
 import { SearchBar } from "../components/SearchBar";
 import { MovieCard } from "../components/MovieCard";
 
-export function meta({}: Route.MetaArgs) {
-  return [
-    { title: "Movie Search - React Movie Hooks" },
-    { name: "description", content: "Search and discover movies" },
-  ];
-}
-
-export default function Main() {
+export function Main() {
+  useEffect(() => {
+    document.title = "Movie Search - React Movie Hooks";
+  }, []);
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const search = useSearch({ from: '/' });
+  const searchQuery = search.q || '';
   const [userName, setUserName] = useState({ firstName: "", lastName: "" });
   const [movies, setMovies] = useState<Movie[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -22,14 +18,12 @@ export default function Main() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  const searchQuery = searchParams.get('q') || '';
-
   useEffect(() => {
     const authToken = localStorage.getItem('authToken');
     const userData = localStorage.getItem('user');
     
     if (!authToken || !userData) {
-      navigate('/signup');
+      navigate({ to: '/signup' });
       return;
     }
 
@@ -44,7 +38,7 @@ export default function Main() {
       console.error("Error loading user data:", error);
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
-      navigate('/signup');
+      navigate({ to: '/signup' });
     }
   }, [navigate]);
 
@@ -76,21 +70,19 @@ export default function Main() {
 
   const handleSearch = (query: string) => {
     setCurrentPage(1);
-    if (query) {
-      setSearchParams({ q: query });
-    } else {
-      setSearchParams({});
-    }
+    navigate({ 
+      search: query ? { q: query } : {} 
+    });
   };
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
-    navigate('/signup');
+    navigate({ to: '/signup' });
   };
 
   const handleMovieClick = (movieId: string) => {
-    navigate(`/movie/${movieId}`);
+    navigate({ to: '/movie/$id', params: { id: movieId } });
   };
 
   return (
@@ -108,7 +100,7 @@ export default function Main() {
             </div>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => navigate('/settings')}
+                onClick={() => navigate({ to: '/settings' })}
                 className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition duration-200 flex items-center gap-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1,19 +1,15 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router";
-import type { Route } from "./+types/movie-details";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import { movieService, type TmdbMovie } from "../services/movieService";
 import { MovieDetails } from "../components/MovieDetails";
 
-export function meta({}: Route.MetaArgs) {
-  return [
-    { title: "Movie Details - React Movie Hooks" },
-    { name: "description", content: "View movie details" },
-  ];
-}
-
-export default function MovieDetailsPage() {
+export function MovieDetailsPage() {
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { id } = useParams({ from: '/movie/$id' });
+  
+  useEffect(() => {
+    document.title = "Movie Details - React Movie Hooks";
+  }, []);
   const [movie, setMovie] = useState<TmdbMovie | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +18,7 @@ export default function MovieDetailsPage() {
     const authToken = localStorage.getItem('authToken');
     
     if (!authToken) {
-      navigate('/signup');
+      navigate({ to: '/signup' });
       return;
     }
 
@@ -51,7 +47,7 @@ export default function MovieDetailsPage() {
   };
 
   const handleBackToMain = () => {
-    navigate('/');
+    navigate({ to: '/' });
   };
 
   if (isLoading) {

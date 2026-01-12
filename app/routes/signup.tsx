@@ -1,18 +1,14 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
-import type { Route } from "./+types/signup";
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "@tanstack/react-router";
 
 const API_URL = "http://localhost:5001/api";
 
-export function meta({}: Route.MetaArgs) {
-  return [
-    { title: "Sign Up - React Movie Hooks" },
-    { name: "description", content: "Create your account" },
-  ];
-}
-
-export default function Signup() {
+export function Signup() {
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    document.title = "Sign Up - React Movie Hooks";
+  }, []);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -178,7 +174,7 @@ export default function Signup() {
           console.log("=== SIGNUP SUCCESSFUL ===");
           console.log("User created:", data);
           alert("Registration successful! Please login with your credentials.");
-          navigate('/login');
+          navigate({ to: '/login' });
         } else {
           console.error("Signup failed:", data);
           if (data.message === "User already exists") {
@@ -360,12 +356,12 @@ export default function Signup() {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Already have an account?{" "}
-              <a
-                href="/login"
+              <Link
+                to="/login"
                 className="text-blue-600 hover:text-blue-700 font-medium"
               >
                 Sign in
-              </a>
+              </Link>
             </p>
           </div>
         </div>

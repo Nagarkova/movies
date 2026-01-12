@@ -1,4 +1,4 @@
-import type { TmdbMovie } from "../services/movieService";
+import type { TmdbMovie } from "~/services/movieService";
 
 interface MovieDetailsProps {
   movie: TmdbMovie;
